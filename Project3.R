@@ -40,12 +40,6 @@ ggplot(cohort, aes(x = Age, fill = Sex, color = Sex)) +
   theme_bw(base_size = 20) + 
   theme(legend.position = "bottom")
 
-# ACTIVE LEARNING [01] //================================
-# 1. What does as.data.frame do?
-# 2. What's the dimension of our cohort dataset? What are the columns?
-# 3. What's the dimension of our EHR dataset? What are the columns?
-# 4. Which gender has a higher age in our cohort?
-
 ############################################################
 ################          Step 3         ###################
 ##################       Phecodes      #####################
@@ -69,10 +63,6 @@ phecode_map = as.data.frame(fread("~/biol6150/Data//EHR/PhecodeMap.csv"))
 dim(phecode_map)
 head(phecode_map)
 
-# ACTIVE LEARNING [02] //================================
-# 1. Why would dim() and length(unique(ParticipantID)) give different numbers?
-# 2. What are all the columns in the phecode table? Explain each one in detail.
-
 # Extract the IDC10CM codes for our disease of interest: Type 2 Diabetes.
 phecode_map_t2d = phecode_map %>% filter(phecode_str == "Type 2 diabetes")
 dim(phecode_map_t2d)
@@ -85,10 +75,11 @@ head(ehr_records)
 
 ehr_records %>% filter(ParticipantID == 72855012)
 ehr_records %>% filter(ParticipantID == 10055570)
+ehr_records %>% filter(ParticipantID == 10008475)
 
 case_control_cohort <- ehr_records %>%
                         group_by(ParticipantID) %>%
-                        summarize(T2DStatus = max(T2D_Code)) %>%
+                        summarize(T2DCount = sum(T2D_Code)) %>%
                         as.data.frame()
 
 dim(case_control_cohort)
@@ -100,8 +91,22 @@ dim(case_control_cohort)
 head(case_control_cohort)
 
 #count the number of cases/controls per sex group.
-case_control_cohort_counts = case_control_cohort %>% group_by(Sex) %>% count(T2DStatus)
+case_control_cohort_counts = case_control_cohort %>% group_by(Sex) %>% count(T2DCount)
 case_control_cohort_counts
+
+
+
+ambiguous_cohort   <- case_control_cohort %>% filter(T2DCount == 1)
+ambiguous_cohort
+
+case_cohort   <- case_control_cohort %>% filter(T2DCount > 1)
+case_cohort
+
+case_cohort %>% filter(ParticipantID == 10008475)
+ehr_records %>% filter(ParticipantID == 10008475)
+
+ehr_records %>% filter(ParticipantID == 22673416)
+
 
 #you can also check for the prevalence of T2D per sex group
 case_control_cohort_counts %>% 
@@ -112,6 +117,4 @@ case_control_cohort_counts %>%
         Prevalence = Cases / Total * 100 
     )
 
-# ACTIVE LEARNING [03] //================================
-# 1. What does a 0 signify? What does a 1 signify? What type of variable do we call this? How does exclude range relate to this?
-# 2. Which gender has more cases of T2D?
+
