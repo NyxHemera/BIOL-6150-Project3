@@ -19,12 +19,12 @@ library('ggplot2')
 
 
 # Load the files for our cohort.
-cohort = as.data.frame(fread("~/biol6150/Data/EHR/ParticipantCohort.tsv"))
+cohort = as.data.frame(fread("~/biol6150/Data2/EHR/ParticipantCohort.tsv"))
 range(cohort$ParticipantID)
 dim(cohort)
 head(cohort)
 
-ehr_records = as.data.frame(fread("~/biol6150/Data/EHR/ParticipantEHR.tsv"))
+ehr_records = as.data.frame(fread("~/biol6150/Data2/EHR/ParticipantEHR.tsv"))
 dim(ehr_records)
 head(ehr_records)
 
@@ -64,26 +64,48 @@ dim(phecode_map)
 head(phecode_map)
 
 # Extract the IDC10CM codes for our disease of interest: Type 2 Diabetes.
-phecode_map_t2d = phecode_map %>% filter(phecode_str == "Type 2 diabetes")
+phecode_map_t2d = phecode_map %>% filter(phecode == 250.2)
 dim(phecode_map_t2d)
-head(phecode_map_t2d,25)
+head(phecode_map_t2d,100)
+
+# Extract the IDC10CM codes for the T2D Exclusions
+phecode_map_exclusions <- phecode_map %>% filter(between(phecode, 249, 250.99) & phecode != 250.2)
+dim(phecode_map_exclusions)
+head(phecode_map_exclusions,50)
+
+phecode_map_exclusions %>% filter(icd10cm == 'E09.36')
+
+
+#This should be empty if above excludes T2D codes
+phecode_map_exclusions %>% filter(icd10cm == 'E11.622')
+
 
 #Label if an EHR entry is for T2D or not.
 ehr_records = ehr_records %>% mutate(T2D_Code = case_when(ICD10CM %in% phecode_map_t2d$icd10cm ~ 1, TRUE ~ 0))
 dim(ehr_records)
-head(ehr_records)
+head(ehr_records,25)
+
+#Label if an EHR entry is within the exclusion criteria
+ehr_records = ehr_records %>% mutate(T2D_Exclusion_Code = case_when(ICD10CM %in% phecode_map_exclusions$icd10cm ~ 1, TRUE ~ 0))
+dim(ehr_records)
+head(ehr_records,25)
 
 ehr_records %>% filter(ParticipantID == 72855012)
 ehr_records %>% filter(ParticipantID == 10055570)
 ehr_records %>% filter(ParticipantID == 10008475)
+ehr_records %>% filter(ParticipantID == 96872475)
+
 
 case_control_cohort <- ehr_records %>%
                         group_by(ParticipantID) %>%
-                        summarize(T2DCount = sum(T2D_Code)) %>%
+                        summarize(T2DCount = sum(T2D_Code), T2DExclusionCount = sum(T2D_Exclusion_Code)) %>%
                         as.data.frame()
 
 dim(case_control_cohort)
 head(case_control_cohort)
+
+case_control_cohort %>% filter(T2DExclusionCount > 0)
+
 
 #include demographic information
 case_control_cohort = merge(case_control_cohort, cohort, by = "ParticipantID")
@@ -102,8 +124,17 @@ ambiguous_cohort
 case_cohort   <- case_control_cohort %>% filter(T2DCount > 1)
 case_cohort
 
+excluded_cohort   <- case_control_cohort %>% filter(T2DCount == 0 & T2DExclusionCount > 0)
+excluded_cohort
+
+control_cohort   <- case_control_cohort %>% filter(T2DCount == 0 & T2DExclusionCount == 0)
+control_cohort
+
 case_cohort %>% filter(ParticipantID == 10008475)
 ehr_records %>% filter(ParticipantID == 10008475)
+
+case_cohort %>% filter(ParticipantID == 96872475)
+
 
 ehr_records %>% filter(ParticipantID == 22673416)
 
