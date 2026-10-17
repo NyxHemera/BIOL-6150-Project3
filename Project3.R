@@ -1,3 +1,10 @@
+#
+#
+# Group 4
+# Chaimae Echcharef and Jordan Rust
+#
+#
+
 # Load Packages and clear environment
 
 rm(list=ls())
